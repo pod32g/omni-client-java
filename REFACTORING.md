@@ -155,7 +155,7 @@ their imports changed.
 
 ## Bonus: compare the two languages
 
-Open [`../omni-client-go`](../omni-client-go) side by side with this project. The README's "How the
+Open [omni-client-go](https://github.com/pod32g/omni-client-go) side by side with this project. The README's "How the
 Go idioms became Java" table is a guide. Some design choices came from the language, such as
 functional options versus a builder, error values versus exceptions, and a copied `http.Client`
 versus an immutable `HttpClient`. Porting is a kind of refactoring too: the behaviour stays the same

@@ -1,6 +1,6 @@
 # omni-client-java
 
-A Java port of [omni-client-go](../omni-client-go): a small, dependency-free client for the
+A Java port of [omni-client-go](https://github.com/pod32g/omni-client-go): a small, dependency-free client for the
 omni-metrics HTTP API (a Prometheus-shaped metrics server). It runs queries, lists series, labels
 and targets, and pushes samples.
 
