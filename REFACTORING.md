@@ -3,14 +3,16 @@
 This project is small and has a good test suite, so it is a safe place to practise refactoring:
 changing how code is built without changing what it does.
 
-The code is a faithful port of a Go library, so it has some real "smells". Nothing was planted on
-purpose. Each exercise below points at one of them.
+The code works and is tested, but it has some real "smells". Nothing was planted on purpose. Each
+exercise below points at one of them.
 
 ## Ground rules
 
-1. **Start green.** Run `./build.sh` and see `44 passed, 0 failed`. Those tests are your safety net.
-2. **Take small steps.** Make one change, run `./build.sh`, then commit. If a test goes red, undo
-   the step rather than debugging a large change.
+1. **Start green.** Run `./gradlew test` and see `44 tests: 44 passed, 0 failed, 0 skipped`. Those
+   tests are your safety net. Keep an eye on the count too: if it drops, a test got lost.
+2. **Take small steps.** Make one change, run `./gradlew test`, then commit. If a test goes red,
+   undo the step rather than debugging a large change. In IntelliJ you can also run the tests from
+   the editor.
 3. **Refactoring doesn't change behaviour.** If you have to change what a test *expects*, you are
    changing behaviour. That can be fine, but decide it on purpose and commit it on its own.
 4. **Let the IDE help.** Rename, Extract Method, Inline and Change Signature in IntelliJ or VS Code
@@ -112,8 +114,8 @@ registry.add("m", Map.of("a=b", "c"), 1);
 registry.add("m", Map.of("a", "b=c"), 1);   // both become "m<sep>a=b=c": one series, value 2
 ```
 
-The Go original has the same bug. It is harmless in practice, because Prometheus label names can't
-contain `=`, but nothing in the client checks that.
+It is harmless in practice, because Prometheus label names can't contain `=`, but nothing in the
+client checks that.
 
 **Do:**
 
@@ -141,22 +143,19 @@ Object>)`, and see whether the result reads better.
 **Talk about:** keeping records as plain data has value too. There is no single right answer; the
 point is to argue it out.
 
-## 9. Tooling refactor: switch to JUnit 5
-
-**Where:** `src/test`.
-
-**Do:** add Maven or Gradle with JUnit 5, and delete `TestRunner`, `Test` and `Assertions`.
-`Assertions` already uses JUnit's method names and argument order, so most test files only need
-their imports changed.
-
-**Talk about:** the test count must still be 44, so check it before and after.
-
 ---
 
-## Bonus: compare the two languages
+## Bonus: compare with the Go version
 
-Open [omni-client-go](https://github.com/pod32g/omni-client-go) side by side with this project. The README's "How the
-Go idioms became Java" table is a guide. Some design choices came from the language, such as
-functional options versus a builder, error values versus exceptions, and a copied `http.Client`
-versus an immutable `HttpClient`. Porting is a kind of refactoring too: the behaviour stays the same
-while the structure changes completely.
+This library started as a port of [omni-client-go](https://github.com/pod32g/omni-client-go), and
+porting is a kind of refactoring too: the behaviour stays the same while the structure changes
+completely. Open both side by side and look at which design choices came from the language:
+
+| Go | Java |
+| --- | --- |
+| functional options: `New(url, WithTimeout(..), WithPushAuth(..))` | a builder: `OmniClient.builder(url).timeout(..).pushToken(..).build()` |
+| `(result, error)` return pairs | return the result, throw an exception |
+| `context.Context` for cancellation | a timeout, or interrupting the thread |
+| zero `time.Time` meaning "not set" | `null` |
+| structs with `json:"..."` tags | records plus explicit decoders |
+| copying the caller's `http.Client` before setting a timeout | sharing the immutable `HttpClient`, with a timeout on each request |

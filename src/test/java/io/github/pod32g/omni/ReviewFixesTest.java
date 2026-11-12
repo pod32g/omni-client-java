@@ -1,20 +1,21 @@
 package io.github.pod32g.omni;
 
-import static io.github.pod32g.omni.Assertions.assertEquals;
-import static io.github.pod32g.omni.Assertions.assertThrows;
-import static io.github.pod32g.omni.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import org.junit.jupiter.api.Test;
 
-/** Port of review_fixes_test.go: one test per finding of the Go version's code review. */
+/** Edge cases found in a code review, one test per finding. */
 final class ReviewFixesTest {
 
     // Finding #1: option order must not matter, and the timeout must never change a caller's
-    // client. In Go that needed a defensive copy; Java's HttpClient is immutable, so the library
-    // can keep the caller's instance and apply the timeout per request instead.
+    // client. HttpClient is immutable, so the library keeps the caller's instance and applies the
+    // timeout to each request instead.
     @Test
     void optionsOrderIndependentAndNoSharedMutation() {
         HttpClient shared = HttpClient.newHttpClient();
@@ -75,8 +76,7 @@ final class ReviewFixesTest {
                 () -> c.queryRange("up", Instant.ofEpochSecond(2), Instant.ofEpochSecond(1), second));
     }
 
-    // Finding #4: time formatting must not be capped at milliseconds. (Go used a float64 and
-    // checked ~100.123456; BigDecimal makes it exact.)
+    // Finding #4: time formatting must not be capped at milliseconds. BigDecimal keeps it exact.
     @Test
     void formatTimeNotMillisecondCapped() {
         assertEquals("100.123456", Times.format(Instant.ofEpochSecond(100, 123_456_000)));

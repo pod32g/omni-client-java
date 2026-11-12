@@ -1,16 +1,17 @@
 package io.github.pod32g.omni;
 
-import static io.github.pod32g.omni.Assertions.assertEquals;
-import static io.github.pod32g.omni.Assertions.assertFalse;
-import static io.github.pod32g.omni.Assertions.assertNotNull;
-import static io.github.pod32g.omni.Assertions.assertThrows;
-import static io.github.pod32g.omni.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Test;
 
-/** Port of metadata_test.go. */
+/** The series, label and target endpoints. */
 final class MetadataTest {
 
     @Test

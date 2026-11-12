@@ -1,5 +1,12 @@
-out/
+# Gradle
+.gradle/
+.kotlin/
+build/
+
+# IDEs
 .idea/
 *.iml
 .vscode/
+
+# macOS
 .DS_Store

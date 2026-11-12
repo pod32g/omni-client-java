@@ -1,14 +1,15 @@
 package io.github.pod32g.omni;
 
-import static io.github.pod32g.omni.Assertions.assertEquals;
-import static io.github.pod32g.omni.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Test;
 
-/** Port of registry_test.go. */
+/** The in-process Registry of counters and gauges. */
 final class RegistryTest {
 
     /**

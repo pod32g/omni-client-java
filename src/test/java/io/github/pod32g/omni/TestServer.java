@@ -11,8 +11,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
- * A local HTTP server for tests, built on the JDK's own com.sun.net.httpserver (the Java cousin of
- * Go's httptest.Server). Close it with try-with-resources.
+ * A local HTTP server for tests, built on the JDK's own com.sun.net.httpserver. Close it with
+ * try-with-resources.
  */
 final class TestServer implements AutoCloseable {
     private final HttpServer server;

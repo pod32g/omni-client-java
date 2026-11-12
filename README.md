@@ -1,23 +1,35 @@
 # omni-client-java
 
-A Java port of [omni-client-go](https://github.com/pod32g/omni-client-go): a small, dependency-free client for the
-omni-metrics HTTP API (a Prometheus-shaped metrics server). It runs queries, lists series, labels
-and targets, and pushes samples.
+A small Java client for **omni-metrics**, a metrics server with a Prometheus-compatible HTTP API.
+Use it to read metrics: run PromQL queries, list series and labels, and check scrape targets. Use it
+to write them too: a program that has no HTTP endpoint for the server to scrape can push its own
+samples.
 
-It needs JDK 21 or newer and nothing else: no Maven, no Gradle, no libraries. The Go version used
-only Go's standard library, and this port uses only Java's.
+The library needs Java 21 or newer and has no runtime dependencies beyond the JDK.
 
-It is also teaching material. [REFACTORING.md](REFACTORING.md) has exercises that use this code.
+The code is small and fully tested, so it also works as a place to practise refactoring.
+[REFACTORING.md](REFACTORING.md) has exercises.
 
 ## Build and test
 
+Nothing needs to be installed except a JDK. The Gradle wrapper (`./gradlew`, or `gradlew.bat` on
+Windows) downloads the right Gradle version the first time it runs.
+
 ```sh
-./build.sh
+./gradlew build    # compile, run the tests, and build the jar
+./gradlew test     # just the tests
 ```
 
-The script compiles the library to `out/omni-client.jar`, then compiles and runs the 44 tests. The
-tests are ported one-for-one from the Go suite, plus tests for the JSON code the Go version got from
-its standard library. They need no network: each test starts a local HTTP server.
+The jar ends up in `build/libs/`. Gradle compiles and tests with JDK 21 and downloads it
+automatically if the machine doesn't have it.
+
+The tests need no network and no running server: each one starts a small local HTTP server. The
+test run ends with a one-line total, such as `44 tests: 44 passed, 0 failed, 0 skipped`. Gradle
+skips tests that already passed when nothing has changed, so use `./gradlew test --rerun` to run
+them again anyway.
+
+To work in an IDE, open the folder in IntelliJ IDEA (or VS Code with the Java extensions). It is
+imported as a Gradle project, and every test can be run from the editor.
 
 ## Usage
 
@@ -36,7 +48,7 @@ for (Sample s : c.query("rate(omni_http_requests_total[1m])").vector()) {
     System.out.println(s.metric() + " => " + s.value());
 }
 
-// Range query.
+// Range query: one value per step over the last hour.
 Instant end = Instant.now();
 QueryResult m = c.queryRange("up", end.minus(Duration.ofHours(1)), end, Duration.ofSeconds(15));
 for (Series series : m.matrix()) {
@@ -47,19 +59,15 @@ for (Series series : m.matrix()) {
 for (Target t : c.targets()) {
     System.out.println(t.job() + "/" + t.instance() + " up=" + t.up());
 }
-
-// Push, from a small in-process registry.
-Registry reg = new Registry();
-reg.add("records_processed_total", null, 1500);              // counter
-reg.set("queue_depth", Map.of("queue", "high"), 12);         // gauge
-PushResult res = c.push(new PushRequest("batch-importer", "worker-7", reg.series()));
 ```
+
+A client is immutable and safe to share between threads. Create one per server and reuse it.
 
 ## API
 
 | Method | Endpoint | Returns |
 | --- | --- | --- |
-| `query(expr)` / `query(expr, time)` | `/api/v1/query` | `QueryResult` (vector / scalar) |
+| `query(expr)` / `query(expr, time)` | `/api/v1/query` | `QueryResult` (vector or scalar) |
 | `queryRange(expr, start, end, step)` | `/api/v1/query_range` | `QueryResult` (matrix) |
 | `series(matches, start, end)` | `/api/v1/series` | `List<Map<String, String>>` |
 | `labelNames()` | `/api/v1/labels` | `List<String>` |
@@ -67,40 +75,69 @@ PushResult res = c.push(new PushRequest("batch-importer", "worker-7", reg.series
 | `targets()` | `/api/v1/targets` | `List<Target>` |
 | `push(request)` | `/api/v1/push` | `PushResult` |
 
-Errors are unchecked exceptions:
+`QueryResult.type()` says which shape came back: `VECTOR` fills `vector()`, `MATRIX` fills
+`matrix()`, and `SCALAR` fills `scalar()`. Values are `double`s and may be `+Inf`, `-Inf` or `NaN`.
+Timestamps are `Instant`s.
 
-- `IllegalArgumentException`: a bad argument, caught before any request is sent.
-- `ApiException`: the server answered with an error envelope or a non-2xx status. It has
-  `statusCode()`, `type()` (for example `bad_data`) and `serverMessage()`.
-- `OmniException`: anything else, such as a network failure, a timeout, an interruption or a body
-  that can't be decoded. `ApiException` is a subclass.
+## Pushing metrics
 
-## How the Go idioms became Java
+Each push **appends** samples, building a time series on the server, so `rate()` works on pushed
+counters. Build the series by hand or keep them in a `Registry`:
 
-| Go | Java |
+```java
+Registry reg = new Registry();
+reg.add("records_processed_total", null, 1500);          // counter: add to it
+reg.set("queue_depth", Map.of("queue", "high"), 12);     // gauge: set it
+
+PushResult res = c.push(new PushRequest(
+        "batch-importer",   // job, required
+        "worker-7",         // instance, optional: the server defaults it to the caller's host
+        reg.series()));
+System.out.println(res.samplesAppended() + " samples appended");
+```
+
+Each series carries exactly one of the following:
+
+- a single value, which the server stamps when it receives it: `PushSeries.ofValue(...)`
+- explicit samples with their own timestamps: `PushSeries.ofSamples(...)`
+
+The server adds the `job` and `instance` labels itself. A client can't override `__name__`, `job`
+or `instance`.
+
+## Errors
+
+All errors are unchecked exceptions:
+
+- `IllegalArgumentException`: a bad argument, found before any request is sent.
+- `ApiException`: the server replied with an error or a non-2xx status. It has `statusCode()`,
+  `type()` (for example `bad_data`) and `serverMessage()`.
+- `OmniException`: anything else, such as a network failure, a timeout, an interrupted thread or a
+  reply that can't be decoded. `ApiException` is a subclass of it.
+
+```java
+try {
+    c.query("bad{");
+} catch (ApiException e) {
+    System.out.println(e.type() + ": " + e.serverMessage());   // bad_data: ...
+}
+```
+
+To cancel a slow request, set a timeout on the builder or interrupt the thread that is waiting for
+it.
+
+## How the code is organised
+
+Everything lives in the package `io.github.pod32g.omni` under `src/main/java`.
+
+| File | What it does |
 | --- | --- |
-| `omni.New(url, WithTimeout(..), WithHTTPClient(..), WithPushAuth(..))` (functional options) | `OmniClient.builder(url).timeout(..).httpClient(..).pushToken(..).build()` |
-| `(result, error)` return pairs | return the result, throw an exception |
-| `*APIError` and `errors.As` | `ApiException` and `catch` |
-| `context.Context` for cancellation | a per-request timeout, or interrupting the calling thread |
-| `time.Time{}` (zero time) meaning "not set" | `null` |
-| `*float64` meaning "optional" | `Double` (nullable) |
-| structs with `json:"..."` tags and `json.Unmarshal` | records, plus explicit decoders in `Decoders.java` and a small `Json.java` |
-| `sync.Mutex` | `synchronized` |
-| `httptest.NewServer` | `com.sun.net.httpserver.HttpServer` (see `TestServer.java`) |
-| `go test` | `./build.sh` with a ~60-line `TestRunner` that uses JUnit's names |
+| `OmniClient` | The public entry point: builds requests, checks arguments, sends them, and unwraps the server's `{"status": ..., "data": ...}` reply. |
+| `Decoders` | Turns each endpoint's JSON `data` into the result records. |
+| `Json` | A small JSON reader and writer, so the library needs no JSON dependency. |
+| `Times` | Converts between `Instant`/`Duration` and the API's decimal Unix seconds. |
+| `Registry` | The in-process store of counters and gauges for pushing. |
+| `QueryResult`, `Sample`, `Series`, `Point`, `Scalar`, `Target`, `PushRequest`, `PushSeries`, `PushSample`, `PushResult` | Records that carry the data in and out. |
+| `OmniException`, `ApiException` | The error types. |
 
-## Differences from the Go version
-
-- **No `context.Context`.** Cancel a request with the builder's `timeout`, or by interrupting the
-  calling thread. Both are tested.
-- **Times are sent as exact decimals.** Go converted them through a `float64`, which is accurate to
-  about a microsecond. Java uses `BigDecimal`, so nanoseconds survive.
-- **A caller's `HttpClient` is used as is.** Go had to copy the caller's `http.Client` so that
-  setting a timeout wouldn't change it. Java's `HttpClient` can't be changed after it is built, so
-  the port applies the timeout to each request instead.
-- **Results are unmodifiable.** Lists and label maps in results can't be changed by the caller.
-
-Checked against the live omni-metrics on 2026-11-12 with read-only calls only: `query`,
-`queryRange`, `labelNames`, `targets`, and an invalid query that returned a `bad_data`
-`ApiException`.
+The tests in `src/test/java` use JUnit, plus `TestServer`, a small local HTTP server built on the
+JDK's own `com.sun.net.httpserver`.

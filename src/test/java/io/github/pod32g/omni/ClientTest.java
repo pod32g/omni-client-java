@@ -1,16 +1,17 @@
 package io.github.pod32g.omni;
 
-import static io.github.pod32g.omni.Assertions.assertEquals;
-import static io.github.pod32g.omni.Assertions.assertFalse;
-import static io.github.pod32g.omni.Assertions.assertThrows;
-import static io.github.pod32g.omni.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Test;
 
-/** Port of client_test.go. */
+/** Building a client, error replies, and cancelling a request. */
 final class ClientTest {
 
     private static final String EMPTY_LABELS = "{\"status\":\"success\",\"data\":[]}";
@@ -34,8 +35,8 @@ final class ClientTest {
         }
     }
 
-    // Go's TestContextCancellation cancels a context.Context. Java has no context; a request is
-    // cut short by a timeout or by interrupting the calling thread, so both are tested.
+    // A request can be cut short by a timeout or by interrupting the calling thread; both are
+    // tested.
 
     @Test
     void timeoutCancelsRequest() {

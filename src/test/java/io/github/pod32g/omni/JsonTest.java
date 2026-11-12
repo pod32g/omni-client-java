@@ -1,15 +1,16 @@
 package io.github.pod32g.omni;
 
-import static io.github.pod32g.omni.Assertions.assertEquals;
-import static io.github.pod32g.omni.Assertions.assertNull;
-import static io.github.pod32g.omni.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Test;
 
-/** New in the Java port: Go used encoding/json, Java has its own small Json class to test. */
+/** The small built-in JSON reader and writer. */
 final class JsonTest {
 
     @Test

@@ -1,12 +1,13 @@
 package io.github.pod32g.omni;
 
-import static io.github.pod32g.omni.Assertions.assertEquals;
-import static io.github.pod32g.omni.Assertions.assertThrows;
-import static io.github.pod32g.omni.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import org.junit.jupiter.api.Test;
 
-/** Port of value_test.go: decoding Prometheus' [timestamp, "value"] pairs. */
+/** Decoding Prometheus' [timestamp, "value"] pairs. */
 final class ValueTest {
 
     private static Decoders.SamplePair decode(String json) {
@@ -42,7 +43,7 @@ final class ValueTest {
 
     @Test
     void parseValueRejectsJavaOnlyForms() {
-        // Double.parseDouble would accept all of these; Go's ParseFloat (and so the API) doesn't.
+        // Double.parseDouble would accept all of these; the API's number format doesn't.
         for (String s : List.of("1d", "2f", " 3", "0x1p3", "")) {
             assertThrows(NumberFormatException.class, () -> Decoders.parseValue(s));
         }

@@ -1,17 +1,18 @@
 package io.github.pod32g.omni;
 
-import static io.github.pod32g.omni.Assertions.assertEquals;
-import static io.github.pod32g.omni.Assertions.assertFalse;
-import static io.github.pod32g.omni.Assertions.assertNull;
-import static io.github.pod32g.omni.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Test;
 
-/** Port of push_test.go. */
+/** Pushing samples: the request body, the auth header, and checks made before sending. */
 final class PushTest {
 
     /** What the echo server saw. Checked on the test thread, not inside the server's handler. */

@@ -1,18 +1,16 @@
 package io.github.pod32g.omni;
 
-import static io.github.pod32g.omni.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Test;
 
-/**
- * Port of example_test.go. Each test is the Go example's code, and checks it prints exactly the
- * Go example's "// Output:" block.
- */
+/** Short end-to-end examples of using the client, each checking the exact lines it prints. */
 final class ExamplesTest {
 
-    /** Formats a number like Go's %g does for these values: 1, not 1.0. */
+    /** Formats whole numbers without a decimal point: 1, not 1.0. */
     private static String g(double v) {
         return v == Math.rint(v) ? Long.toString((long) v) : Double.toString(v);
     }
